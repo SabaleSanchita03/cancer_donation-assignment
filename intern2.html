@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Donation Tracking Dashboard</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+
+    <style>
+        /* Custom styles for dashboard cards */
+        .card-metric {
+            border-left: 5px solid #20c997; /* Soft teal accent */
+            transition: transform 0.2s;
+        }
+        .card-metric:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-light">
+
+    <div class="container-fluid p-4">
+        <header class="mb-4">
+            <h1 class="text-primary border-bottom pb-2">🎗️ Donation Overview Dashboard</h1>
+        </header>
+
+        <div class="row mb-5">
+            
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card card-metric shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title text-uppercase text-muted">Total Donations Received</h5>
+                        <div class="d-flex align-items-center">
+                            <h2 id="total-donations" class="mb-0 fw-bold text-success">$0</h2>
+                            <span class="ms-3 badge bg-success-subtle text-success">+15% this month</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card card-metric shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title text-uppercase text-muted">Number of Donors</h5>
+                        <div class="d-flex align-items-center">
+                            <h2 id="num-donors" class="mb-0 fw-bold text-info">0</h2>
+                            <span class="ms-3 badge bg-info-subtle text-info">+20 new</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="card shadow-sm p-3">
+                    <div class="card-header bg-white border-0">
+                        <h4 class="mb-0 text-secondary">📈 Donation Trends (Last 6 Months)</h4>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="donationChart" class="w-100" style="max-height: 400px;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white border-0">
+                        <h4 class="mb-0 text-secondary">Summary Data</h4>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Month</th>
+                                    <th>Amount Raised</th>
+                                    <th>Unique Donors</th>
+                                </tr>
+                            </thead>
+                            <tbody id="summary-table-body">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+
+    <script>
+        // --- 1. DUMMY DATA ---
+        const donationData = [
+            { month: "July", amount: 1500, donors: 50 },
+            { month: "August", amount: 2200, donors: 75 },
+            { month: "September", amount: 1850, donors: 60 },
+            { month: "October", amount: 2900, donors: 90 },
+            { month: "November", amount: 3500, donors: 110 },
+            { month: "December", amount: 4100, donors: 130 }
+        ];
+
+        // --- 2. CALCULATE METRICS ---
+        
+        // Calculate Total Donations
+        const totalDonations = donationData.reduce((sum, item) => sum + item.amount, 0);
+
+        // Calculate Number of Donors (using the donors from the last month for a current total)
+        // If we want total unique donors over the period, we'd need more complex data, 
+        // but for a simple dashboard, we'll sum the monthly totals.
+        const totalUniqueDonors = donationData.reduce((sum, item) => sum + item.donors, 0);
+
+
+        // --- 3. RENDER METRICS ---
+        document.getElementById('total-donations').textContent = `$${totalDonations.toLocaleString()}`;
+        document.getElementById('num-donors').textContent = totalUniqueDonors.toLocaleString();
+
+        // --- 4. RENDER SUMMARY TABLE ---
+        const tableBody = document.getElementById('summary-table-body');
+        donationData.forEach(item => {
+            const row = tableBody.insertRow();
+            row.innerHTML = `
+                <td>${item.month}</td>
+                <td>$${item.amount.toLocaleString()}</td>
+                <td>${item.donors.toLocaleString()}</td>
+            `;
+        });
+
+        // --- 5. RENDER CHART (Donation Trends) ---
+        function renderDonationChart() {
+            const ctx = document.getElementById('donationChart').getContext('2d');
+            
+            const labels = donationData.map(item => item.month);
+            const data = donationData.map(item => item.amount);
+
+            new Chart(ctx, {
+                type: 'line', // Line chart is great for trends
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Donations Received ($)',
+                        data: data,
+                        borderColor: '#20c997', // Use soft teal color
+                        backgroundColor: 'rgba(32, 201, 151, 0.2)',
+                        fill: true,
+                        tension: 0.3 // Makes the line slightly curved for a softer look
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Amount ($)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize the chart
+        renderDonationChart();
+    </script>
+</body>
+</html>
